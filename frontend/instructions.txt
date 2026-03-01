@@ -1,1 +1,2 @@
-frontent submission url: https://2026-devsoc-frontend.vercel.app/
+frontent submission url: https://2026-devsoc-frontend.vercel.app/git 
+frontend repo url: https://github.com/caelan-g/2026-devsoc-frontend
