@@ -28,7 +28,7 @@ class Ingredient(CookbookEntry):
 app = Flask(__name__)
 
 # Store your recipes here!
-cookbook = None
+cookbook = []
 
 # Task 1 helper (don't touch)
 @app.route("/parse", methods=['POST'])
@@ -43,17 +43,59 @@ def parse():
 # [TASK 1] ====================================================================
 # Takes in a recipeName and returns it in a form that 
 def parse_handwriting(recipeName: str) -> Union[str | None]:
-	# TODO: implement me
-	return recipeName
+	final = ""
+	prev = ""
+	space_characters = ["_", "-", " "]
+	recipeName = recipeName.strip()
+	for i in range(0, len(recipeName)):
+		if recipeName[i] in space_characters and prev not in space_characters:
+			final += " "
+		elif recipeName[i].isalpha():
+			if prev in space_characters or i == 0:
+				final += (recipeName[i].upper())
+			else:
+				final += (recipeName[i].lower())
+		prev = recipeName[i]
+	if len(final) > 0:
+		return final
+	else:
+		return None
 
 
 # [TASK 2] ====================================================================
 # Endpoint that adds a CookbookEntry to your magical cookbook
 @app.route('/entry', methods=['POST'])
 def create_entry():
-	# TODO: implement me
-	return 'not implemented', 500
+    data = request.get_json()
+    if not data or "type" not in data:
+        return jsonify({"error": "Missing type field"}), 400
 
+    if data["type"] == "recipe":
+        items = [RequiredItem(**item) for item in data.get("requiredItems", [])]
+        entry = Recipe(name=data["name"], required_items=items)
+        unique_names = set()
+        
+        for item in entry.required_items:
+            name_lower = item.name.lower()
+            
+            if name_lower in unique_names:
+                return jsonify({"error": "Required items must have unique names"}), 400
+            unique_names.add(name_lower)
+
+    elif data["type"] == "ingredient":
+        entry = Ingredient(name=data["name"], cook_time=data["cookTime"])
+        print(entry)
+        if entry.cook_time < 0:
+            return jsonify({"error": "Invalid cook time"}), 400
+
+    else:
+        return jsonify({"error": "Invalid entry type"}), 400
+
+    if any(existing.name == entry.name for existing in cookbook):
+        return jsonify({"error": "Entry name already exists"}), 400
+
+    cookbook.append(entry)
+    return jsonify({}), 200
 
 # [TASK 3] ====================================================================
 # Endpoint that returns a summary of a recipe that corresponds to a query name
